@@ -1,33 +1,36 @@
 (function () {
-    console.log('[MichaelToneSwitcher] 正在初始化（No Import 版）');
+    console.log('[MichaelToneSwitcher] init - final fallback approach');
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('extensions_settings');
+    // 等頁面 DOM 就緒後嘗試插入 UI
+    $(document).ready(() => {
+        // 有些版本的設定頁容器是 #extensions_settings，也可能是 #extensionsMenu
+        // 我們嘗試找看看
+        const container = document.getElementById('extensions_settings') 
+                       || document.getElementById('extensionsMenu');
+
         if (container) {
             const statusBox = document.createElement('div');
             statusBox.id = 'michaelToneStatus';
-            statusBox.textContent = '目前人格：未偵測';
+            statusBox.textContent = '目前人格：未偵測 (messageSent)';
             container.appendChild(statusBox);
+            console.log('[MichaelToneSwitcher] UI 已插入 extensions_settings 容器');
+        } else {
+            console.warn('[MichaelToneSwitcher] 找不到 #extensions_settings 容器，UI 可能無法顯示');
         }
     });
 
-    const eventSource = window.eventSource;
-    const event_types = window.event_types;
-
-    if (!eventSource || !event_types) {
-        console.error('[MichaelToneSwitcher] 無法取得事件來源，模組無效');
-        return;
-    }
-
-    eventSource.on(event_types.MESSAGE_SENT, (data) => {
-        const userMessage = data.message?.trim?.();
-        if (!userMessage) return;
-
+    // 綁定舊事件：messageSent
+    // SillyTavern 1.12.13 應該還有這個事件
+    $(document).on('messageSent', function (event, message) {
+        if (!message) return;
+        const userMessage = message.trim();
         console.log(`[MichaelToneSwitcher] 使用者訊息: ${userMessage}`);
 
+        // 取得 mainPrompt
         let prompt = getContext();
         let tone = '';
 
+        // 關鍵字判斷
         if (/想你|抱抱|好累|想撒嬌|奶油泡芙/.test(userMessage)) {
             prompt = activateTone(prompt, '輕鬆日常');
             prompt = deactivateTone(prompt, ['支配向', '心理壓迫']);
@@ -46,18 +49,21 @@
             tone = '輕鬆日常';
         }
 
+        // 寫回 mainPrompt
         setContext(prompt);
+
+        // 更新 UI 狀態
         updateToneStatus(tone);
     });
 
     function activateTone(prompt, toneName) {
-        const regex = new RegExp(`\[${toneName}\](.*?)\[/${toneName}\]`, 'gs');
+        const regex = new RegExp(`\\[${toneName}\\](.*?)\\[/${toneName}\\]`, 'gs');
         return prompt.replace(regex, (match, p1) => `[${toneName}]${p1.replace(/\(\(disabled\)\)\s*/g, '')}[/${toneName}]`);
     }
 
     function deactivateTone(prompt, toneNames) {
         toneNames.forEach(toneName => {
-            const regex = new RegExp(`\[${toneName}\](.*?)\[/${toneName}\]`, 'gs');
+            const regex = new RegExp(`\\[${toneName}\\](.*?)\\[/${toneName}\\]`, 'gs');
             prompt = prompt.replace(regex, (match, p1) => `[${toneName}]((disabled)) ${p1.replace(/\(\(disabled\)\)\s*/g, '')}[/${toneName}]`);
         });
         return prompt;
@@ -78,7 +84,7 @@
     function updateToneStatus(tone) {
         const box = document.getElementById('michaelToneStatus');
         if (box) {
-            box.textContent = `目前人格：${tone}`;
+            box.textContent = `目前人格：${tone} (messageSent)`;
         }
     }
 })();
