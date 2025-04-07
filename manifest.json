@@ -1,0 +1,8 @@
+{
+    "name": "MichaelToneSwitcher",
+    "description": "根據對話內容自動切換Michael人格提示片段（日常向、支配向）",
+    "version": "1.0.0",
+    "author": "ChatGPT",
+    "entry": "index.js",
+    "dependencies": []
+}
