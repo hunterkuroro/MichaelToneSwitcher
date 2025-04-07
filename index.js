@@ -1,9 +1,6 @@
-import { eventSource, event_types } from '../../../script.js';
-
 (function () {
-    console.log('[MichaelToneSwitcher] 正在初始化');
+    console.log('[MichaelToneSwitcher] 正在初始化（No Import 版）');
 
-    // 等待 DOM 載入後掛載 UI
     window.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('extensions_settings');
         if (container) {
@@ -13,6 +10,14 @@ import { eventSource, event_types } from '../../../script.js';
             container.appendChild(statusBox);
         }
     });
+
+    const eventSource = window.eventSource;
+    const event_types = window.event_types;
+
+    if (!eventSource || !event_types) {
+        console.error('[MichaelToneSwitcher] 無法取得事件來源，模組無效');
+        return;
+    }
 
     eventSource.on(event_types.MESSAGE_SENT, (data) => {
         const userMessage = data.message?.trim?.();
